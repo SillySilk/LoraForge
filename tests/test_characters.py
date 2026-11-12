@@ -380,3 +380,34 @@ def test_describe_prompt_for_image_prefers_characters_over_trigger():
                                assignments={"Mira_01.png": {"present": ["Mira"]}})
     p = C.describe_prompt_for_image("Base.", data, "Mira_01.png", trigger="mrx")
     assert "Mira" in p and "mrx" not in p
+
+
+def test_describe_prompt_for_an_object_file_names_the_object_not_the_person():
+    # "Bit Gag_001_Object.png": the name is the item. Calling the model wearing it
+    # "Bit Gag" taught the LoRA a person's name instead of the object.
+    data = C.DatasetCharacters(roster=[C.Character(token="Bit Gag")],
+                               assignments={"Bit Gag_001_Object.png": {"present": ["Bit Gag"]}})
+    p = C.describe_prompt_for_image("Base.", data, "Bit Gag_001_Object.png")
+    assert "refer to them as" not in p
+    assert "object" in p.lower() and "Bit Gag" in p
+    assert "not a person's name" in p
+
+
+def test_describe_prompt_for_an_object_file_ignores_the_trigger_as_a_person_name():
+    p = C.describe_prompt_for_image("Base.", C.DatasetCharacters(), "Bit Gag_002_Object.png",
+                                    trigger="BitGag")
+    assert "refer to them as" not in p and "BitGag" in p
+
+
+def test_describe_prompt_for_a_style_file_names_nobody():
+    data = C.DatasetCharacters(roster=[C.Character(token="Ink Wash")],
+                               assignments={"Ink Wash_001_Style.png": {"present": ["Ink Wash"]}})
+    p = C.describe_prompt_for_image("Base.", data, "Ink Wash_001_Style.png", trigger="inkwash")
+    assert "Ink Wash" not in p and "inkwash" not in p
+    assert "do not use any names" in p.lower()
+
+
+def test_describe_prompt_for_a_character_file_still_names_the_person():
+    data = C.DatasetCharacters(roster=[C.Character(token="Mira")],
+                               assignments={"Mira_001_Character.png": {"present": ["Mira"]}})
+    assert "refer to them as Mira" in C.describe_prompt_for_image("Base.", data, "Mira_001_Character.png")

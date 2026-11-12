@@ -95,20 +95,21 @@ def test_restricted_style_skips_an_image_it_has_nothing_to_build_from(tmp_path):
     assert not (tmp_path / "a.txt").exists()
 
 
-def test_job_names_the_subject_by_default():
-    assert CaptionJob(dataset_folder="d", sdscripts_path="s").name_subject is True
+def test_job_is_a_character_job_by_default():
+    assert CaptionJob(dataset_folder="d", sdscripts_path="s").subject_type == "character"
 
 
-def test_describe_stage_leaves_the_trigger_out_when_not_naming_the_subject(monkeypatch):
+def test_describe_stage_passes_the_trigger_with_the_subject_type(monkeypatch):
+    # The describer decides from the subject type whether the name may name a person.
     seen = {}
     runner = CaptionRunner()
     monkeypatch.setattr(runner._joy, "start", lambda **kw: seen.update(kw))
-    runner._job = CaptionJob(dataset_folder="d", sdscripts_path="s", trigger="inkwash",
-                             name_subject=False)
+    runner._job = CaptionJob(dataset_folder="d", sdscripts_path="s", trigger="BitGag",
+                             subject_type="concept")
     runner._stages = [("describe", ["a.png"])]
     runner._running = True
     runner._next()
-    assert seen["name"] == ""
+    assert seen["name"] == "BitGag" and seen["subject"] == "concept"
 
 
 def test_runner_records_the_caption_style(tmp_path, monkeypatch):

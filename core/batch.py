@@ -152,7 +152,7 @@ class RunDefinition:
             describe_cache_dir=self.describe_cache_dir,
             caption_rules=self.caption_rules,
             caption_style=style,
-            name_subject=(self.subject_type or "character") == "character")
+            subject_type=(self.subject_type or "character"))
 
 
 def resolve_sample_prompts(run: RunDefinition):

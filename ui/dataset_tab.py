@@ -402,11 +402,11 @@ class DatasetTab(QWidget):
 
     def set_subject_type(self, key: str):
         """The LoRA's subject (character / concept / style), mirrored from the Train
-        tab. Only a character LoRA's descriptions call the subject by the trigger word."""
+        tab. Only a character LoRA's descriptions call a person by name."""
         self._subject_type = (key or "character").lower()
 
-    def _names_subject(self) -> bool:
-        return getattr(self, "_subject_type", "character") == "character"
+    def _subject_now(self) -> str:
+        return getattr(self, "_subject_type", "character")
 
     def get_prefix(self) -> str:
         return self._prefix_edit.text().strip()
@@ -1260,7 +1260,7 @@ class DatasetTab(QWidget):
             describe_model_id=describe_id,
             describe_cache_dir=describe_cache or "",
             caption_rules=parse_rules(AppSettings().get("caption_rules_json")),
-            name_subject=self._names_subject(),
+            subject_type=self._subject_now(),
             caption_style=self._caption_style_now(),
         )
 
@@ -1457,7 +1457,8 @@ class DatasetTab(QWidget):
             sdscripts_path=self._sdscripts_path,
             image_folder=self._folder_path,
             overwrite=overwrite,
-            name=self.get_trigger_word() if self._names_subject() else "",
+            name=self.get_trigger_word(),
+            subject=self._subject_now(),
         )
         self._begin_caption(self._joycaption)
 

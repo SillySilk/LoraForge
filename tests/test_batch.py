@@ -578,11 +578,11 @@ def test_caption_style_roundtrips():
     assert RunDefinition.from_dict(r.to_dict()).caption_style == "tags"
 
 
-@pytest.mark.parametrize("subject,named", [("", True), ("character", True),
-                                            ("concept", False), ("style", False)])
-def test_only_character_runs_name_the_subject_by_trigger(subject, named):
+@pytest.mark.parametrize("subject,expected", [("", "character"), ("character", "character"),
+                                               ("concept", "concept"), ("style", "style")])
+def test_caption_job_carries_the_run_subject_type(subject, expected):
     r = RunDefinition("S", "C:/ds", 3, trigger_word="inkwash", subject_type=subject)
-    assert r.to_caption_job("C:/sd", "", "keep").name_subject is named
+    assert r.to_caption_job("C:/sd", "", "keep").subject_type == expected
 
 
 def test_config_overrides_default_empty_and_roundtrip():

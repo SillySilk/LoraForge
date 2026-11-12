@@ -89,10 +89,10 @@ class CaptionJob:
     # core.models.CAPTION_STYLES; decides which sidecars Combine reads. The chain is
     # set separately (chain_for_style builds the matching one for unattended runs).
     caption_style: str = "prose+tags"
-    # Call the image's subject by the trigger word in described prose (when no
-    # character is assigned). Only right for a person/character LoRA: a style or
-    # concept trigger named as a person would be learned as one.
-    name_subject: bool = True
+    # The LoRA's subject (character / concept / style). The describe prompt names a
+    # person only for a character; a concept's name goes on the item and a style's on
+    # nothing (characters.describe_prompt_for_image), so neither is learned as a person.
+    subject_type: str = "character"
 
     def combine_prefix(self) -> str:
         """What `combine_all(prefix=...)` receives. The trigger is NOT a separate
@@ -241,7 +241,7 @@ class CaptionRunner(QObject):
                             overwrite=(job.policy == cp.OVERWRITE),
                             model_id=job.describe_model_id,
                             cache_dir=job.describe_cache_dir,
-                            name=job.trigger if job.name_subject else "")
+                            name=job.trigger, subject=job.subject_type)
         elif stage == "combine":
             written, errors = combine_all(
                 job.dataset_folder, prefix=job.combine_prefix(), order=job.order,

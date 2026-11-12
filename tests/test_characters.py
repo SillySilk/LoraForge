@@ -411,3 +411,30 @@ def test_describe_prompt_for_a_character_file_still_names_the_person():
     data = C.DatasetCharacters(roster=[C.Character(token="Mira")],
                                assignments={"Mira_001_Character.png": {"present": ["Mira"]}})
     assert "refer to them as Mira" in C.describe_prompt_for_image("Base.", data, "Mira_001_Character.png")
+
+
+def test_an_object_run_never_names_a_person_even_with_old_style_filenames():
+    # "gag_01.png" doesn't say its category; the run's Object/Concept type decides.
+    data = C.DatasetCharacters(roster=[C.Character(token="gag")],
+                               assignments={"gag_01.png": {"present": ["gag"]}})
+    p = C.describe_prompt_for_image("Base.", data, "gag_01.png", subject="concept")
+    assert "refer to them as" not in p and "not a person's name" in p
+
+
+def test_a_concept_run_names_the_concept_by_its_trigger():
+    p = C.describe_prompt_for_image("Base.", C.DatasetCharacters(), "x.png",
+                                    trigger="BitGag", subject="concept")
+    assert "call it BitGag" in p and "refer to them as" not in p
+
+
+def test_a_style_run_names_nobody():
+    p = C.describe_prompt_for_image("Base.", C.DatasetCharacters(), "x.png",
+                                    trigger="inkwash", subject="style")
+    assert "inkwash" not in p and "do not use any names" in p.lower()
+
+
+def test_the_filename_category_wins_over_the_run_type():
+    data = C.DatasetCharacters(roster=[C.Character(token="Mira")],
+                               assignments={"Mira_001_Character.png": {"present": ["Mira"]}})
+    p = C.describe_prompt_for_image("Base.", data, "Mira_001_Character.png", subject="concept")
+    assert "refer to them as Mira" in p

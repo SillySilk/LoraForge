@@ -133,16 +133,31 @@ def describe_prompt(base_prompt: str, names) -> str:
     return f"{base_prompt.strip()} {extra}"
 
 
-def describe_prompt_for_image(base_prompt: str, data, image_name: str, trigger: str = "") -> str:
-    """Assigned characters name the image's people; with none assigned, the dataset
-    trigger word does. Never both, or one person would be described as two."""
-    names = explicit_tokens_for_image(data, image_name) or [trigger]
-    # The filename's category says what the name is. An Object's name is the item's,
-    # so it must not become the person's name (a gag set captioned every model as
-    # "Bit Gag"); a Style's name is no one's.
+# The run's subject type (Home's Person / Object-Concept / Style) as a filename category.
+_SUBJECT_CATEGORY = {"character": "Character", "concept": "Object", "style": "Style"}
+
+
+def name_kind(image_name: str, subject: str = "character") -> str:
+    """What a name in this image's caption stands for: "Character", "Object" or
+    "Style". The filename's own category (NAME_SERIAL_CATEGORY) decides; a name that
+    doesn't parse follows the run's subject type."""
     from core import naming
     parsed = naming.parse_name(Path(image_name).stem)
-    category = parsed["category"] if parsed else "Character"
+    if parsed:
+        return parsed["category"]
+    return _SUBJECT_CATEGORY.get((subject or "character").strip().lower(), "Character")
+
+
+def describe_prompt_for_image(base_prompt: str, data, image_name: str, trigger: str = "",
+                              subject: str = "character") -> str:
+    """Assigned characters name the image's people; with none assigned, the dataset
+    trigger word does. Never both, or one person would be described as two.
+
+    Only a Character's name may name a person. An Object's name is the item's (a gag
+    set once captioned every model wearing it as "Bit Gag", so the LoRA learned a
+    person's name), and a Style's name is no one's."""
+    names = explicit_tokens_for_image(data, image_name) or [trigger]
+    category = name_kind(image_name, subject)
     if category == "Object":
         return describe_object_prompt(base_prompt, names)
     if category == "Style":
@@ -156,8 +171,8 @@ def _no_names(base_prompt: str) -> str:
 
 
 def describe_object_prompt(base_prompt: str, names) -> str:
-    """The describe prompt for an object set: the name belongs to the item, and any
-    people in the image stay unnamed."""
+    """The describe prompt for an object or concept set: the name belongs to the item
+    or concept, and any people in the image stay unnamed."""
     unique, seen = [], set()
     for n in (x.strip() for x in names):
         if n and n.lower() not in seen:
@@ -166,8 +181,8 @@ def describe_object_prompt(base_prompt: str, names) -> str:
     if not unique:
         return _no_names(base_prompt)
     label = " / ".join(unique)
-    return (f"{base_prompt.strip()} The main object in this image is called {label}; "
-            f"refer to that object as {label}. {label} is the object's name, not a person's name: "
+    return (f"{base_prompt.strip()} {label} is the name of the object or concept this image "
+            f"shows; when you mention it, call it {label}. {label} is not a person's name: "
             "do not use any names for people; describe each person by their appearance.")
 
 

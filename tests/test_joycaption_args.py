@@ -14,3 +14,7 @@ def test_existing_flags_unchanged():
     args = joycaption.build_args("run.py", "C:/ds", overwrite=True, model_id="m/x", cache_dir="D:/c")
     assert args[:3] == ["run.py", "C:/ds", "--ext=.nl"]
     assert "--overwrite" in args and "--model_id=m/x" in args and "--cache_dir=D:/c" in args
+
+
+def test_subject_flag_is_passed_when_set():
+    assert "--subject=concept" in joycaption.build_args("run.py", "C:/ds", subject="Concept")

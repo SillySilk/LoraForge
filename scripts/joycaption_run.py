@@ -86,6 +86,9 @@ def main():
     parser.add_argument("--prompt", default=DEFAULT_PROMPT)
     parser.add_argument("--name", default="",
                         help="trigger word to call the subject by when no character is assigned")
+    parser.add_argument("--subject", default="character",
+                        help="the LoRA's subject type (character / concept / style); only a "
+                             "character's name may name a person")
     parser.add_argument("--cache_dir", default=None, help="model cache directory")
     parser.add_argument("--model_id", default=DEFAULT_MODEL_ID,
                         help="Hugging Face repo ID of the describe model")
@@ -211,7 +214,7 @@ def main():
         convo = [
             {"role": "system", "content": "You are a helpful image captioner."},
             {"role": "user", "content": characters.describe_prompt_for_image(
-                args.prompt, cast, img.name, trigger=args.name)},
+                args.prompt, cast, img.name, trigger=args.name, subject=args.subject)},
         ]
         return processor.apply_chat_template(convo, tokenize=False, add_generation_prompt=True)
 

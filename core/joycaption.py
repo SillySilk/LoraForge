@@ -8,7 +8,7 @@ from utils.proc import apply_no_window
 
 def build_args(script: str, image_folder: str, ext: str = ".nl", overwrite: bool = False,
                prompt: str = "", model_id: str = "", cache_dir: str = "",
-               name: str = "") -> list:
+               name: str = "", subject: str = "") -> list:
     args = [script, image_folder, f"--ext={ext}"]
     if overwrite:
         args.append("--overwrite")
@@ -24,6 +24,9 @@ def build_args(script: str, image_folder: str, ext: str = ".nl", overwrite: bool
     # The trigger word the prose calls the subject by when no character is assigned.
     if name.strip():
         args.append(f"--name={name.strip()}")
+    # The LoRA's subject type: decides whether a name may name a person.
+    if subject.strip():
+        args.append(f"--subject={subject.strip().lower()}")
     return args
 
 
@@ -50,6 +53,7 @@ class JoyCaptionProcess(QObject):
         model_id: str = "",
         cache_dir: str = "",
         name: str = "",
+        subject: str = "",
     ):
         if self._process is not None and self._process.state() != QProcess.NotRunning:
             return
@@ -60,7 +64,8 @@ class JoyCaptionProcess(QObject):
 
         script = str(Path(__file__).resolve().parents[1] / "scripts" / "joycaption_run.py")
 
-        args = build_args(script, image_folder, ext, overwrite, prompt, model_id, cache_dir, name)
+        args = build_args(script, image_folder, ext, overwrite, prompt, model_id, cache_dir, name,
+                          subject)
 
         self._process = QProcess(self)
         apply_no_window(self._process)  # no console window pop-up on Windows

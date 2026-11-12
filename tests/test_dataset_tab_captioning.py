@@ -713,14 +713,15 @@ def _describe_kwargs(t, monkeypatch, tmp_path):
 def test_manual_describe_names_the_subject_for_a_character_lora(tmp_path, monkeypatch):
     from ui.dataset_tab import DatasetTab
     t = DatasetTab()
-    assert _describe_kwargs(t, monkeypatch, tmp_path)["name"] == "inkwash"
+    kw = _describe_kwargs(t, monkeypatch, tmp_path)
+    assert kw["name"] == "inkwash" and kw["subject"] == "character"
 
 
-def test_manual_describe_leaves_the_trigger_out_for_a_style_lora(tmp_path, monkeypatch):
+def test_manual_describe_tells_the_describer_it_is_a_style_lora(tmp_path, monkeypatch):
     from ui.dataset_tab import DatasetTab
     t = DatasetTab()
     t.set_subject_type("style")
-    assert _describe_kwargs(t, monkeypatch, tmp_path)["name"] == ""
+    assert _describe_kwargs(t, monkeypatch, tmp_path)["subject"] == "style"
 
 
 def test_caption_job_follows_the_subject_type(tmp_path):
@@ -728,9 +729,9 @@ def test_caption_job_follows_the_subject_type(tmp_path):
     t = DatasetTab()
     t._folder_path = str(tmp_path)
     t.set_subject_type("concept")
-    assert t._build_caption_job("keep").name_subject is False
+    assert t._build_caption_job("keep").subject_type == "concept"
     t.set_subject_type("character")
-    assert t._build_caption_job("keep").name_subject is True
+    assert t._build_caption_job("keep").subject_type == "character"
 
 
 def test_dataset_tab_chain_follows_the_caption_style(tmp_path):

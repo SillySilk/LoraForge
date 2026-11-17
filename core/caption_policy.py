@@ -32,6 +32,22 @@ class FolderCaptionState:
     partial: list          # has .tags or .nl, but no usable .txt
     untouched: list        # nothing at all
     foreign: int           # captioned images with no manifest entry -> not ours
+    locked: bool = False   # the folder asks for its captions to be kept (Character Forge sets)
+
+
+# Character Forge writes its sets with finished captions and this marker; its captions
+# know the trigger word and what each picture varies, so they are never rewritten here.
+LOCK_FILE = "character-forge.json"
+
+
+def is_locked(folder: str) -> bool:
+    """True when `folder` holds a Character Forge marker asking to keep its captions."""
+    import json
+    try:
+        data = json.loads((Path(folder) / LOCK_FILE).read_text(encoding="utf-8"))
+    except (OSError, ValueError, TypeError):
+        return False
+    return isinstance(data, dict) and data.get("keep_captions") is True
 
 
 def _nonempty(p: Path) -> bool:
@@ -72,16 +88,22 @@ def scan(folder: str, manifest_images=_UNSET) -> FolderCaptionState:
             untouched.append(str(img))
     return FolderCaptionState(
         total=len(captioned) + len(partial) + len(untouched),
-        captioned=captioned, partial=partial, untouched=untouched, foreign=foreign)
+        captioned=captioned, partial=partial, untouched=untouched, foreign=foreign,
+        locked=is_locked(folder))
 
 
 def has_conflict(state: FolderCaptionState) -> bool:
-    """True when running the chain would destroy work that is already on disk."""
-    return bool(state.captioned)
+    """True when running the chain would destroy work that is already on disk.
+
+    A locked folder's captions are never at risk (images_for keeps them), so there
+    is nothing to ask about."""
+    return bool(state.captioned) and not state.locked
 
 
 def images_for(state: FolderCaptionState, policy: str) -> list:
     """The images the caption chain should process under `policy`."""
+    if state.locked and policy in (OVERWRITE, KEEP, FILL):
+        return list(state.partial) + list(state.untouched)
     if policy == OVERWRITE:
         return list(state.captioned) + list(state.partial) + list(state.untouched)
     if policy == KEEP:

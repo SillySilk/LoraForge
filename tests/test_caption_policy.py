@@ -176,3 +176,38 @@ def test_stage_and_tag_propagates_tagger_failure(tmp_path, monkeypatch):
     monkeypatch.setattr(w.subprocess, "Popen", _FakeTagger([], 1))
     assert w.stage_and_tag(str(tmp_path), [str(img)], ["python", "x"], poll=0) == 1
     assert not (tmp_path / "a.tags").exists()
+
+
+def _lock(folder: Path, keep=True):
+    import json
+    (folder / "character-forge.json").write_text(json.dumps({"app": "Character Forge", "keep_captions": keep}),
+                                                 encoding="utf-8")
+
+
+def test_character_forge_folder_keeps_its_captions_under_any_policy(tmp_path):
+    _img(tmp_path, "a", txt="Mira, anime illustration, close-up.")
+    _img(tmp_path, "b")
+    _lock(tmp_path)
+    st = cp.scan(str(tmp_path))
+    assert st.locked
+    for policy in (cp.OVERWRITE, cp.KEEP, cp.FILL):
+        assert [Path(p).stem for p in cp.images_for(st, policy)] == ["b"]
+
+
+def test_locked_folder_has_no_conflict_to_ask_about(tmp_path):
+    _img(tmp_path, "a", txt="cap")
+    _lock(tmp_path)
+    assert not cp.has_conflict(cp.scan(str(tmp_path)))
+
+
+def test_marker_without_keep_flag_does_not_lock(tmp_path):
+    _img(tmp_path, "a", txt="cap")
+    _lock(tmp_path, keep=False)
+    st = cp.scan(str(tmp_path))
+    assert not st.locked and cp.has_conflict(st)
+
+
+def test_unreadable_marker_does_not_lock(tmp_path):
+    _img(tmp_path, "a", txt="cap")
+    (tmp_path / "character-forge.json").write_text("{not json", encoding="utf-8")
+    assert not cp.scan(str(tmp_path)).locked

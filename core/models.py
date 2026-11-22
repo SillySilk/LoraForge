@@ -23,8 +23,10 @@ class StepProfile:
 
 ANIMA_STEPS = StepProfile(4, {"character": 56, "concept": 34, "style": 26},
                           {"character": 800, "concept": 800, "style": 800}, 3000)
-MOSS_STEPS = StepProfile(1, {"character": 40, "concept": 25, "style": 12},
-                         {"character": 2000, "concept": 1000, "style": 600}, 5000)
+# MOSS baseline (2026-11-21, real-person test): a 40-image character came out right at
+# 800 steps = 20 exposures/image. Concept/style keep their old ratio to character.
+MOSS_STEPS = StepProfile(1, {"character": 20, "concept": 12, "style": 6},
+                         {"character": 600, "concept": 400, "style": 300}, 2500)
 
 
 @dataclass(frozen=True)
@@ -46,7 +48,7 @@ MODELS = {
     m.id: m for m in (
         ModelPreset("anima", "Anima", KOHYA, "prose+tags", 500, steps=ANIMA_STEPS),
         ModelPreset("krea2", "Krea 2", ONETRAINER, "prose+tags", 0),
-        ModelPreset("moss", "MOSS-Image", KOHYA, "prose+tags", 2500,
+        ModelPreset("moss", "MOSS-Image", KOHYA, "prose+tags", 800,
                     steps=MOSS_STEPS, min_vram_gb=12, forge_test=False, auto_character_steps=True,
                     auto_memory=True),
     )

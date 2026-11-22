@@ -91,7 +91,7 @@ def test_uncap_text_follows_the_selected_models_step_cap(tmp_path):
     t = _tab(tmp_path)
     assert "3,000" in t._uncap_check.toolTip() and "3,000" in t._uncap_warn.text()
     t.set_model("moss")
-    assert "5,000" in t._uncap_check.toolTip() and "5,000" in t._uncap_warn.text()
+    assert "2,500" in t._uncap_check.toolTip() and "2,500" in t._uncap_warn.text()
     assert "3,000" not in t._uncap_check.toolTip()
     t.set_model("anima")
     assert "3,000" in t._uncap_check.toolTip() and "3,000" in t._uncap_warn.text()

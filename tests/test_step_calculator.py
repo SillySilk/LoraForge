@@ -139,21 +139,26 @@ def test_anima_suggestions_unchanged():
     assert calculate_training_params(60, 840)["batch_size"] == 4
 
 
+def test_moss_character_baseline_40_images_is_800():
+    # The real-run anchor: Allura, 40 images, perfect at 800 steps.
+    assert suggest_target_steps("character", 40, model="moss") == 800
+
+
 def test_moss_character_60_images():
-    assert suggest_target_steps("character", 60, model="moss") == 2400
+    assert suggest_target_steps("character", 60, model="moss") == 1200
 
 
 def test_moss_character_small_set_floor():
-    assert suggest_target_steps("character", 20, model="moss") == 2000
+    assert suggest_target_steps("character", 20, model="moss") == 600
 
 
 def test_moss_style_floor():
-    assert suggest_target_steps("style", 30, model="moss") == 600
+    assert suggest_target_steps("style", 30, model="moss") == 300
 
 
 def test_moss_cap():
-    assert suggest_target_steps("character", 200, model="moss") == 5000
-    assert suggest_target_steps("character", 200, model="moss", uncapped=True) == 8000
+    assert suggest_target_steps("character", 200, model="moss") == 2500
+    assert suggest_target_steps("character", 200, model="moss", uncapped=True) == 4000
     assert is_capped("character", 200, model="moss")
     assert not is_capped("character", 60, model="moss")
 

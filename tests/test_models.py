@@ -35,7 +35,7 @@ def test_moss_preset_fields():
     p = models.get("moss")
     assert p.engine == models.KOHYA and p.caption_style == "prose+tags"
     assert p.min_vram_gb == 12 and p.forge_test is False and p.auto_character_steps
-    assert p.default_target_steps == 2500 and p.steps is models.MOSS_STEPS
+    assert p.default_target_steps == 800 and p.steps is models.MOSS_STEPS
 
 
 def test_existing_presets_keep_their_meaning():

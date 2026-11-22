@@ -224,7 +224,7 @@ def test_plan_auto_steps_per_character(tmp_path):
     data = _set(tmp_path / "set", {"Jay": 20, "Gloria": 60})
     runs, _ = CR.plan(_main(tmp_path / "set", tmp_path / "out", model="moss"), data,
                       CR.image_names(str(tmp_path / "set")), steps=None)
-    assert {r.character_token: r.target_steps for r in runs} == {"Jay": 2000, "Gloria": 2400}
+    assert {r.character_token: r.target_steps for r in runs} == {"Jay": 600, "Gloria": 1200}
 
 
 def test_plan_fixed_steps_unchanged(tmp_path):

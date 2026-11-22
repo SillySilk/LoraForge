@@ -187,7 +187,7 @@ def test_moss_step_spin_starts_from_its_own_default_not_animas_setting():
     t = TrainTab()
     t._app_settings = Settings()
     t.set_model("moss")
-    assert t.get_target_steps() == 2500
+    assert t.get_target_steps() == 800
     t.set_model("anima")
     assert t.get_target_steps() == 700
 

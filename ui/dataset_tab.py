@@ -633,6 +633,36 @@ class DatasetTab(QWidget):
         self._vsplit.setCollapsible(1, True)
         main_layout.addWidget(self._vsplit, 1)
 
+        # ---- Find & replace across every caption in the set (one-shot cleanup) ----
+        replace_row = QHBoxLayout()
+        replace_row.setSpacing(8)
+        find_label = QLabel("Find")
+        find_label.setObjectName("label_field")
+        replace_row.addWidget(find_label)
+        self._find_edit = QLineEdit()
+        self._find_edit.setPlaceholderText("word or phrase")
+        self._find_edit.returnPressed.connect(self._replace_all_captions)
+        replace_row.addWidget(self._find_edit, 1)
+        repl_label = QLabel("Replace with")
+        repl_label.setObjectName("label_field")
+        replace_row.addWidget(repl_label)
+        self._replace_edit = QLineEdit()
+        self._replace_edit.setPlaceholderText("leave blank to delete")
+        self._replace_edit.returnPressed.connect(self._replace_all_captions)
+        replace_row.addWidget(self._replace_edit, 1)
+        self._match_case_cb = QCheckBox("Match case")
+        replace_row.addWidget(self._match_case_cb)
+        self._whole_word_cb = QCheckBox("Whole word")
+        self._whole_word_cb.setChecked(True)
+        replace_row.addWidget(self._whole_word_cb)
+        replace_btn = QPushButton("Replace in all")
+        replace_btn.setObjectName("btn_primary")
+        replace_btn.setToolTip(
+            "Replace in every caption of this set (.txt, .tags and .nl, so a rebuild keeps it)")
+        replace_btn.clicked.connect(self._replace_all_captions)
+        replace_row.addWidget(replace_btn)
+        main_layout.addLayout(replace_row)
+
         self._panel_collapsed = False
         self._restore_splits()
         self._hsplit.splitterMoved.connect(lambda *a: self._save_splits())
@@ -936,6 +966,35 @@ class DatasetTab(QWidget):
                         pass
         self._load_images()  # recreates empty .txt files and refreshes the gallery
         QMessageBox.information(self, "Cleared", f"Deleted {deleted} caption file(s).")
+
+    def _replace_all_captions(self):
+        from core.caption_replace import replace_in_set, scan_matches
+        find = self._find_edit.text()
+        if not find.strip() or not self._dataset_ready():
+            return
+        repl = self._replace_edit.text()
+        match_case = self._match_case_cb.isChecked()
+        whole_word = self._whole_word_cb.isChecked()
+        paths = [item["image_path"] for item in self._image_data]
+
+        total, images = scan_matches(paths, find, match_case, whole_word)
+        if not total:
+            QMessageBox.information(self, "Find & Replace", f"No matches for “{find}”.")
+            return
+        action = f"replace with “{repl}”" if repl else "delete"
+        answer = QMessageBox.question(
+            self, "Find & Replace",
+            f"Found {total} match(es) of “{find}” in {images} caption(s).\n\n"
+            f"{action.capitalize()} all of them? This cannot be undone.",
+            QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+        if answer != QMessageBox.Yes:
+            return
+        replaced, files = replace_in_set(paths, find, repl, match_case, whole_word)
+        self._refresh_all_captions()
+        self._update_status_summary()
+        self._apply_filter()
+        QMessageBox.information(
+            self, "Find & Replace", f"Replaced {replaced} match(es) in {files} file(s).")
 
     def _apply_prefix(self):
         if not self._dataset_ready():

@@ -793,3 +793,35 @@ def test_trashing_one_stem_twin_keeps_the_shared_caption(tmp_path, monkeypatch):
     monkeypatch.setattr(rc, "to_recycle_bin", lambda paths: binned.extend(paths))
     t._on_image_delete_requested(str(tmp_path / "hero.jpg"))
     assert [Path(p).name for p in binned] == ["hero.jpg"]
+
+
+def test_replace_all_captions_edits_every_caption_file(tmp_path, monkeypatch):
+    import ui.dataset_tab as dt_mod
+    img = tmp_path / "a.png"; img.write_bytes(b"x")
+    (tmp_path / "a.txt").write_text("a man, 1boy, solo", encoding="utf-8")
+    (tmp_path / "a.tags").write_text("1boy, solo", encoding="utf-8")
+    monkeypatch.setattr(dt_mod.QMessageBox, "question",
+                        staticmethod(lambda *a, **k: dt_mod.QMessageBox.Yes))
+    monkeypatch.setattr(dt_mod.QMessageBox, "information", staticmethod(lambda *a, **k: None))
+
+    t = dt_mod.DatasetTab()
+    t._folder_path = str(tmp_path)
+    t._image_data = [{"image_path": str(img), "txt_path": str(tmp_path / "a.txt"),
+                      "caption": "a man, 1boy, solo"}]
+    t._find_edit.setText("1boy")
+    t._replace_edit.setText("")
+    t._replace_all_captions()
+    assert (tmp_path / "a.txt").read_text(encoding="utf-8") == "a man, solo"
+    assert (tmp_path / "a.tags").read_text(encoding="utf-8") == "solo"
+
+
+def test_replace_all_captions_blank_find_writes_nothing(tmp_path):
+    import ui.dataset_tab as dt_mod
+    img = tmp_path / "a.png"; img.write_bytes(b"x")
+    (tmp_path / "a.txt").write_text("a man", encoding="utf-8")
+    t = dt_mod.DatasetTab()
+    t._folder_path = str(tmp_path)
+    t._image_data = [{"image_path": str(img), "txt_path": str(tmp_path / "a.txt"), "caption": "a man"}]
+    t._find_edit.setText("   ")
+    t._replace_all_captions()
+    assert (tmp_path / "a.txt").read_text(encoding="utf-8") == "a man"

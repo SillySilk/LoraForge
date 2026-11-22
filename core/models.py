@@ -19,14 +19,22 @@ class StepProfile:
     exposures: dict        # {"character": int, "concept": int, "style": int}
     floor_steps: dict      # same keys
     soft_cap_steps: int
+    # 0 = steps grow 1:1 with image count. Otherwise `exposures` hold exactly at this
+    # many images, and steps grow by the square root of image count either side of it:
+    # a character's face is in every picture, so extra pictures add variety, not a
+    # proportional amount of new material to learn.
+    anchor_images: int = 0
 
 
 ANIMA_STEPS = StepProfile(4, {"character": 56, "concept": 34, "style": 26},
                           {"character": 800, "concept": 800, "style": 800}, 3000)
 # MOSS baseline (2026-11-21, real-person test): a 40-image character came out right at
 # 800 steps = 20 exposures/image. Concept/style keep their old ratio to character.
+# Best guess, untested: steps grow by the square root of image count from that anchor
+# (60 images -> ~980, not 1200).
 MOSS_STEPS = StepProfile(1, {"character": 20, "concept": 12, "style": 6},
-                         {"character": 600, "concept": 400, "style": 300}, 2500)
+                         {"character": 600, "concept": 400, "style": 300}, 2500,
+                         anchor_images=40)
 
 
 @dataclass(frozen=True)

@@ -145,7 +145,14 @@ def test_moss_character_baseline_40_images_is_800():
 
 
 def test_moss_character_60_images():
-    assert suggest_target_steps("character", 60, model="moss") == 1200
+    # Square-root growth from the 40-image anchor: 800 * sqrt(1.5) = 980, not 1200.
+    assert suggest_target_steps("character", 60, model="moss") == 980
+
+
+def test_moss_steps_grow_slower_than_image_count():
+    s40, s80, s160 = (suggest_target_steps("character", n, model="moss") for n in (40, 80, 160))
+    assert s40 < s80 < s160
+    assert s80 == 1131 and s160 == 1600      # doubling images -> ~1.41x steps
 
 
 def test_moss_character_small_set_floor():
@@ -157,9 +164,10 @@ def test_moss_style_floor():
 
 
 def test_moss_cap():
-    assert suggest_target_steps("character", 200, model="moss") == 2500
-    assert suggest_target_steps("character", 200, model="moss", uncapped=True) == 4000
-    assert is_capped("character", 200, model="moss")
+    assert suggest_target_steps("character", 400, model="moss") == 2500
+    assert suggest_target_steps("character", 400, model="moss", uncapped=True) == 2530
+    assert is_capped("character", 400, model="moss")
+    assert not is_capped("character", 200, model="moss")
     assert not is_capped("character", 60, model="moss")
 
 

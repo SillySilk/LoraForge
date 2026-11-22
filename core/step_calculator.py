@@ -139,10 +139,14 @@ def calculate_training_params(image_count: int, target_steps: int = TARGET_STEPS
 
 def _raw_target_steps(subject_type: str, image_count: int,
                       batch_size: int | None = None, model: str = "anima") -> int:
-    """Unbounded exposures-per-image formula: exposures * image_count / batch."""
+    """Unbounded step formula: exposures * image_count / batch, or, for a profile with an
+    anchor, exposures * anchor * sqrt(image_count / anchor) / batch."""
+    profile = _profile(model)
     if batch_size is None:
-        batch_size = _profile(model).batch_size
+        batch_size = profile.batch_size
     count = max(int(image_count or 0), 1)
+    if profile.anchor_images:
+        count = profile.anchor_images * math.sqrt(count / profile.anchor_images)
     return round(target_exposures(subject_type, model) * count / batch_size)
 
 

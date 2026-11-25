@@ -137,19 +137,19 @@ def test_a_loaded_sets_caption_style_reaches_home_and_dataset(monkeypatch):
 
 # 6 ---------------------------------------------------------------------------
 
-def test_a_krea_lora_is_not_auto_delivered_or_test_rendered_in_forge(tmp_path, monkeypatch):
+def test_a_krea_lora_is_auto_delivered_but_never_auto_test_rendered(tmp_path, monkeypatch):
     from core.settings import DEFAULTS, AppSettings
+    assert DEFAULTS["forge_auto_deliver"] is True and "forge_auto_test" not in DEFAULTS
     t, s = _krea_tab(tmp_path, monkeypatch)
     t._app_settings = AppSettings()
-    monkeypatch.setattr(AppSettings, "get", lambda self, k: True if k in (
-        "forge_auto_deliver", "forge_auto_test") else DEFAULTS.get(k))
+    monkeypatch.setattr(AppSettings, "get", lambda self, k: DEFAULTS.get(k))
     calls = []
     monkeypatch.setattr(t, "_deliver_to_forge", lambda **k: calls.append("deliver"))
     monkeypatch.setattr(t, "_test_in_forge", lambda **k: calls.append("test"))
     t._start_training(confirm=False)
     s.finish(str(tmp_path / "x.safetensors"))
-    assert calls == []
-    assert "not sent to Forge" in t._log_edit.toPlainText()
+    assert calls == ["deliver"]
+    assert "not sent to Forge" not in t._log_edit.toPlainText()
 
 
 # 7 ---------------------------------------------------------------------------

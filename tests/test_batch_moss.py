@@ -116,7 +116,7 @@ def test_batch_moss_unknown_gpu_warns_and_runs(tmp_path, monkeypatch):
     assert any("12 GB tier" in line for line in logs)
 
 
-def test_batch_does_not_auto_deliver_a_moss_lora_to_forge(tmp_path, monkeypatch):
+def test_batch_auto_delivers_a_moss_lora_to_forge(tmp_path, monkeypatch):
     import core.batch as batch_mod
     import core.forge_api as forge_api
     monkeypatch.setattr(batch_mod.AppSettings, "get", lambda self, k: {
@@ -131,7 +131,7 @@ def test_batch_does_not_auto_deliver_a_moss_lora_to_forge(tmp_path, monkeypatch)
     logs = []
     r.log_line.connect(logs.append)
     r._maybe_deliver(batch_mod.RunDefinition("M", "C:/ds", 9, model="moss"), str(shipped))
-    assert delivered == []
-    assert any("not sent to Forge automatically" in line for line in logs)
-    r._maybe_deliver(batch_mod.RunDefinition("K", "C:/ds", 9, model="krea2"), str(shipped))
     assert len(delivered) == 1
+    assert not any("not sent to Forge" in line for line in logs)
+    r._maybe_deliver(batch_mod.RunDefinition("K", "C:/ds", 9, model="krea2"), str(shipped))
+    assert len(delivered) == 2

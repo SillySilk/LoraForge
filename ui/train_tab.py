@@ -2945,21 +2945,9 @@ class TrainTab(QWidget):
             else:
                 self._rp(kind="done", label="Complete!")
                 self.status_message.emit("Training finished successfully.")
-            ran = models.get(self._model)
-            if (not kohya or not ran.forge_test) and self._app_settings and (
-                    self._app_settings.get("forge_auto_deliver")
-                    or self._app_settings.get("forge_auto_test")):
-                # The Forge LoRA folder and test checkpoint are set up for Anima; a Krea 2
-                # or MOSS LoRA dropped there, or rendered on an Anima checkpoint, is wrong.
-                self._on_log_line(f"[Lora Forge] {ran.name} LoRA not sent to Forge automatically "
-                                  "(auto-deliver and auto-test are set up for Anima). "
-                                  "Deliver it from Home when you want it in Forge.")
-            elif self._app_settings:
-                if self._app_settings.get("forge_auto_deliver"):
-                    self._deliver_to_forge(silent=True)
-                if self._app_settings.get("forge_auto_test"):
-                    from pathlib import Path
-                    self._test_in_forge(save_dir=str(Path(self._run_dir()) / "forge_test"))
+            # Every model's LoRA goes to the LoRA folder set in Setup (on by default).
+            if self._app_settings and self._app_settings.get("forge_auto_deliver"):
+                self._deliver_to_forge(silent=True)
         else:
             self._rp(kind="error", label="Stopped")
             # A run that stops this early usually never reached a training step, and

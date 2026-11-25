@@ -64,8 +64,8 @@ DEFAULTS = {
     # Connections
     "forge_api_url": "http://127.0.0.1:7860",
     "forge_lora_dir": "",
-    "forge_auto_deliver": False,
-    "forge_auto_test": False,
+    # On by default for every model: the finished LoRA is copied into forge_lora_dir.
+    "forge_auto_deliver": True,
     # ComfyUI has no test-render API we can target (workflows vary), but a plain
     # copy into its LoRA folder covers the ComfyUI crowd (user feedback).
     "comfyui_lora_dir": "",

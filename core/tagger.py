@@ -7,12 +7,23 @@ from core.settings import SETTINGS_APP, SETTINGS_ORG
 from utils.proc import apply_no_window
 
 # (display label, repo_id, use_onnx)
+# Order matters: the saved setting is an index. Slots 2 and 3 held the retired
+# 2023 Keras v2 taggers; they now hold their stronger successors, so an old saved
+# index lands on a better model rather than a missing one.
 TAGGER_MODELS = [
-    ("WD SwinV2 Tagger v3 (recommended)", "SmilingWolf/wd-swinv2-tagger-v3",    True),
-    ("WD ViT Tagger v3",                  "SmilingWolf/wd-vit-tagger-v3",        True),
-    ("WD SwinV2 Tagger v2 (Keras)",       "SmilingWolf/wd-v1-4-swinv2-tagger-v2", False),
-    ("WD ViT Tagger v2 (Keras)",          "SmilingWolf/wd-v1-4-vit-tagger-v2",    False),
+    ("WD SwinV2 Tagger v3 (recommended)",       "SmilingWolf/wd-swinv2-tagger-v3",     True),
+    ("WD ViT Tagger v3",                        "SmilingWolf/wd-vit-tagger-v3",        True),
+    ("WD EVA02-Large Tagger v3 (more accurate)", "SmilingWolf/wd-eva02-large-tagger-v3", True),
+    ("PixAI Tagger v1.0 (best, newest tags)",   "pixai-labs/pixai-tagger-v1.0",        False),
 ]
+
+# Repos that run through scripts/pixai_tag_run.py instead of the sd-scripts WD14
+# tagger. PixAI is a transformers model with its own per-category thresholds.
+PIXAI_REPOS = {"pixai-labs/pixai-tagger-v1.0"}
+
+
+def is_pixai(repo_id: str) -> bool:
+    return (repo_id or "").strip() in PIXAI_REPOS
 
 
 def read_tagger_defaults():
@@ -50,6 +61,12 @@ class TaggerProcess(QObject):
         from core.env import subprocess_python
         python = subprocess_python(sdscripts_path)
 
+        if is_pixai(model_id):
+            args = self._pixai_args(image_folder, model_id, threshold, batch_size,
+                                    only_file, skip_existing)
+            self._launch(python, args)
+            return
+
         # model_dir: store downloaded models inside sd-scripts to keep them portable
         model_dir = str(Path(sdscripts_path) / "wd14_models")
 
@@ -79,7 +96,20 @@ class TaggerProcess(QObject):
             args.append("--onnx")
         if needs_download:
             args.append("--force_download")
+        self._launch(python, args)
 
+    @staticmethod
+    def _pixai_args(image_folder, model_id, threshold, batch_size, only_file, skip_existing):
+        script = str(Path(__file__).resolve().parents[1] / "scripts" / "pixai_tag_run.py")
+        args = [script, image_folder, f"--repo_id={model_id}",
+                f"--thresh={threshold:.2f}", f"--batch_size={batch_size}"]
+        if only_file:
+            args.append(f"--only={only_file}")
+        if skip_existing:
+            args.append("--skip-existing")
+        return args
+
+    def _launch(self, python, args):
         self._process = QProcess(self)
         apply_no_window(self._process)  # no console window pop-up on Windows
         self._process.setProcessChannelMode(QProcess.MergedChannels)

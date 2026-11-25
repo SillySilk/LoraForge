@@ -12,7 +12,8 @@ the CPU torch that sd-scripts' `diffusers[torch]` would otherwise pull:
      wheels lack sm_120 kernels and fail with "no kernel image is available")
   3. sd-scripts/requirements.txt  (its trailing `-e .` installs the kohya lib editable)
   4. requirements.txt             (GUI: PySide6, Pillow, toml)
-  5. onnx + onnxruntime-gpu       (WD14 tagger: onnx loads the model, ort runs it)
+  5. onnx + onnxruntime-gpu + timm (WD14 tagger: onnx loads the model, ort runs it;
+                                    timm is needed by the PixAI tagger's model code)
   6. triton-windows               (MOSS-Image kernels; last, so nothing re-pins around it)
 Then verifies the install. Windows-only. Pure helpers are unit-tested; see
 docs/superpowers/specs/2026-06-24-venv-install-design.md.
@@ -67,7 +68,7 @@ def pip_commands(venv_py: str, repo: str, rtx50: bool = False):
         base + torch_step(rtx50),
         base + ["-r", str(repo_p / "sd-scripts" / "requirements.txt")],
         base + ["-r", str(repo_p / "requirements.txt")],
-        base + ["onnx", "onnxruntime-gpu"],
+        base + ["onnx", "onnxruntime-gpu", "timm"],
         base + ["triton-windows>=3.4,<3.5"],
     ]
 

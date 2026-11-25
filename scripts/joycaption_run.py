@@ -31,6 +31,13 @@ def log(msg: str):
     print(msg, flush=True)
 
 
+def strip_think(text: str) -> str:
+    """Drop a reasoning block (`<think>…</think>`) a thinking model may still emit."""
+    import re
+    text = re.sub(r"<think>.*?</think>", "", text, flags=re.S)
+    return text.replace("<think>", "").replace("</think>", "").strip()
+
+
 def _transformers_version() -> str:
     try:
         import transformers
@@ -173,7 +180,9 @@ def main():
                     # Keep the vision tower + projector in bf16 — quantizing them causes
                     # "self and mat2 must have the same dtype (BFloat16 and Byte)" because
                     # Llava's vision path doesn't dequantize 4-bit weights.
-                    llm_int8_skip_modules=["vision_tower", "multi_modal_projector"],
+                    # Qwen names its vision tower "visual"; keep that in bf16 too.
+                    llm_int8_skip_modules=["vision_tower", "multi_modal_projector",
+                                           "visual", "lm_head"],
                 )
                 model = AutoModelForImageTextToText.from_pretrained(
                     model_id,
@@ -210,13 +219,24 @@ def main():
     log(f"[JoyCaption] Model ready on {device} ({'4-bit' if loaded_4bit else 'bf16'}). "
         f"Captioning {len(todo)} image(s)…")
 
+    # JoyCaption (llava) inserts the image placeholder itself from a plain-text
+    # prompt. Qwen-style models need an explicit image part in the message, or the
+    # processor finds an image with no slot for it.
+    structured = getattr(model.config, "model_type", "") != "llava"
+
     def convo_for(img):
+        prompt = characters.describe_prompt_for_image(
+            args.prompt, cast, img.name, trigger=args.name, subject=args.subject)
+        user = ([{"type": "image"}, {"type": "text", "text": prompt}]
+                if structured else prompt)
         convo = [
             {"role": "system", "content": "You are a helpful image captioner."},
-            {"role": "user", "content": characters.describe_prompt_for_image(
-                args.prompt, cast, img.name, trigger=args.name, subject=args.subject)},
+            {"role": "user", "content": user},
         ]
-        return processor.apply_chat_template(convo, tokenize=False, add_generation_prompt=True)
+        # enable_thinking=False stops Qwen3.5 spending the token budget on a hidden
+        # reasoning block; templates without that switch ignore it.
+        return processor.apply_chat_template(convo, tokenize=False, add_generation_prompt=True,
+                                             enable_thinking=False)
 
     done = 0
     for img in todo:
@@ -239,6 +259,7 @@ def main():
             caption = processor.tokenizer.decode(
                 generate_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False
             ).strip()
+            caption = strip_think(caption)
             if not caption:
                 log(f"[JoyCaption] SKIP {img.name}: no caption produced (hit {args.max_time:.0f}s cap?).")
                 continue

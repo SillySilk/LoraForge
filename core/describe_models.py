@@ -21,10 +21,10 @@ CUSTOM_INDEX = -1
 DESCRIBE_MODELS = [
     ("JoyCaption Beta One 8B — best quality (8GB+ VRAM)",
      "fancyfeast/llama-joycaption-beta-one-hf-llava", 8, True),
-    ("Qwen2.5-VL 3B — faster, lighter (6GB+ VRAM)",
-     "Qwen/Qwen2.5-VL-3B-Instruct", 6, True),
-    ("SmolVLM 2B — smallest, quickest (4GB+ VRAM)",
-     "HuggingFaceTB/SmolVLM-Instruct", 4, True),
+    ("Qwen3.5 4B — faster, lighter (6GB+ VRAM)",
+     "Qwen/Qwen3.5-4B", 6, True),
+    ("Qwen3.5 2B — smallest, quickest (4GB+ VRAM)",
+     "Qwen/Qwen3.5-2B", 4, True),
 ]
 
 DEFAULT_MODEL_ID = DESCRIBE_MODELS[0][1]

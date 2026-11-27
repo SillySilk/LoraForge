@@ -11,11 +11,15 @@ from ui.home_tab import HomeTab
 _app = QApplication.instance() or QApplication([])
 
 
-def test_home_is_first_screen_and_six_nav():
+def test_home_is_first_screen_and_seven_nav():
+    from ui.caption_tab import CaptionTab
     w = MainWindow()
-    assert w._stack.count() == 6
+    assert w._stack.count() == 7
     assert isinstance(w._stack.widget(0), HomeTab)
-    assert len(w._nav_buttons) == 6
+    assert isinstance(w._stack.widget(6), CaptionTab)
+    assert len(w._nav_buttons) == 7
+    w._switch_tab(6)
+    assert w._header_title.text() == "Caption"
 
 
 def test_settings_reached_via_gear_not_top_nav():

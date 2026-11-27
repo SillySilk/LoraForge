@@ -23,6 +23,7 @@ from ui.dataset_tab import DatasetTab
 from ui.characters_tab import CharactersTab
 from ui.train_tab import TrainTab
 from ui.batch_tab import BatchTab
+from ui.caption_tab import CaptionTab
 from ui.progress_rail import ProgressRail
 from utils.styles import asset_url
 
@@ -236,6 +237,7 @@ class MainWindow(QMainWindow):
             ("  Characters", 3, "characters"),
             ("  Train", 4, "train"),
             ("  Batch", 5, "batch"),
+            ("  Caption", 6, "dataset"),
         ]
         for label, index, icon_name in nav_items:
             btn = NavButton(label)
@@ -358,6 +360,7 @@ class MainWindow(QMainWindow):
         self._characters_tab = CharactersTab()
         self._train_tab = TrainTab()
         self._batch_tab = BatchTab()
+        self._caption_tab = CaptionTab()
 
         self._stack.addWidget(self._home_tab)        # index 0
         self._stack.addWidget(self._setup_tab)       # index 1
@@ -365,6 +368,7 @@ class MainWindow(QMainWindow):
         self._stack.addWidget(self._characters_tab)  # index 3
         self._stack.addWidget(self._train_tab)       # index 4
         self._stack.addWidget(self._batch_tab)       # index 5
+        self._stack.addWidget(self._caption_tab)     # index 6
 
         # There is exactly one GPU. DatasetTab captioning, TrainTab training, and
         # BatchTab's own CaptionRunner + TrainingProcess can each seize it, and none
@@ -380,10 +384,12 @@ class MainWindow(QMainWindow):
                     return "captioning is in progress"
                 if tab is not self._train_tab and self._train_tab.is_training():
                     return "training is in progress"
+                if tab is not self._caption_tab and self._caption_tab.is_busy():
+                    return "single-image captioning is in progress"
                 return None
             return check
 
-        for tab in (self._dataset_tab, self._train_tab, self._batch_tab):
+        for tab in (self._dataset_tab, self._train_tab, self._batch_tab, self._caption_tab):
             tab.set_gpu_busy_check(_busy_except(tab))
         # Consolidate renames the set's files: refused while anything is reading them.
         self._characters_tab.set_busy_check(_busy_except(self._characters_tab))
@@ -578,9 +584,9 @@ class MainWindow(QMainWindow):
         for btn, idx in self._nav_buttons:
             btn.set_selected(idx == index)
 
-        tab_names = ["Home", "Setup", "Dataset", "Characters", "Train", "Batch"]
+        tab_names = ["Home", "Setup", "Dataset", "Characters", "Train", "Batch", "Caption"]
         eyebrows = ["The Bench", "The Workshop", "The Cutting Room",
-                    "The Roster", "The Furnace", "The Line"]
+                    "The Roster", "The Furnace", "The Line", "The Scribe"]
         self._header_title.setText(tab_names[index])
         self._header_eyebrow.setText(eyebrows[index].upper())
         self._status_bar.showMessage(f"{tab_names[index]} tab active")
@@ -1558,4 +1564,5 @@ class MainWindow(QMainWindow):
                          "moss": self._setup_tab.model_paths("moss")},
         )
         self._dataset_tab.set_sdscripts_path(sd_path)
+        self._caption_tab.set_sdscripts_path(sd_path)
         self._train_tab.set_onetrainer_root(self._setup_tab.get_onetrainer_root())
